@@ -1,0 +1,23 @@
+# Django
+IDCardManagement/
+__pycache__/
+*.pyc
+db.sqlite3
+media/
+
+# React
+node_modules/
+build/
+dist/
+
+# Logs
+*.log
+
+# Large files
+*.mp4
+*.zip
+*.xlsx
+
+# OS
+Thumbs.db
+.DS_Store

@@ -1,0 +1,97 @@
+/* FormStyles.css */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes progress {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-progress {
+  animation: progress 2s ease-in-out infinite;
+}
+
+/* Custom scrollbar for textarea */
+textarea::-webkit-scrollbar {
+  width: 8px;
+}
+
+textarea::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+textarea::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+textarea::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Form field focus styles */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+/* Smooth transitions */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+/* Custom checkbox and radio styles */
+input[type="checkbox"]:checked + div {
+  background-color: #f59e0b;
+  border-color: #f59e0b;
+}
+
+input[type="radio"]:checked + div {
+  border-color: #f59e0b;
+}
+
+input[type="radio"]:checked + div > div {
+  background-color: #f59e0b;
+}
+
+/* Print styles */
+@media print {
+  .fixed {
+    display: none !important;
+  }
+  
+  .shadow-xl, .shadow-lg, .shadow-md, .shadow-sm {
+    box-shadow: none !important;
+  }
+  
+  .rounded-xl, .rounded-lg, .rounded-md {
+    border-radius: 0 !important;
+  }
+  
+  .bg-gradient-to-r {
+    background: none !important;
+  }
+  
+  .text-transparent {
+    color: black !important;
+  }
+}

@@ -7,7 +7,7 @@ import FormList from "./components/FormList";
 import StudentForm from "./components/StudentForm";
 import ArchitectureManager from "./components/ArchitectureManager";
 import ArchitectureFormTracker from "./components/ArchitectureFormTracker";
-import A from "./components/A";
+
 import Lan from "./components/Lan";
 import LandingPage from "./components/LandingPage";
 import ArchitectureResponsesView from './components/ArchitectureResponsesView';
@@ -29,7 +29,7 @@ function App() {
         <Route element={<Layout />}>
           {/* <Route path="/" element={<LandingPage />} /> */}
            <Route path="/" element={<Lan/>} />
-          {/* <Route path="/admin" element={<LandingPage />} /> */}
+          {/* <Route path="/admin" element={<CreativeAgencyPortfolio />} /> */}
           <Route path="/login" element={<Login />} />
           {/* <Route path="/login-admin" element={<AdminLogin />} /> */}
           <Route path="/admin-login" element={<LandingPage showAdminLogin={true} />} />

@@ -27,8 +27,13 @@ SECRET_KEY = 'django-insecure-a=e(!2nqx3_co&hk@olmhb$dbr2#e6tfk1wpcygks6v_tvhqqw
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+# DEBUG = False
 
 ALLOWED_HOSTS = []
+
+
+# DEBUG = False
+# ALLOWED_HOSTS = ["your-ec2-ip", "your-domain"]
 
 
 # Application definition
@@ -145,6 +150,16 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:5173",
     "http://localhost:3000",  # Your React dev server
     "http://127.0.0.1:3000",
+    #  "https://yourdomain.com", 
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -188,6 +203,29 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+
+#--==-------------------------==
+
+
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.MultiPartParser',
+        'rest_framework.parsers.FormParser',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour'
+    },
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
+    'ALLOWED_VERSIONS': ['1.0'],
+    'DEFAULT_VERSION': '1.0',
     
 }
 
@@ -230,17 +268,51 @@ EMAIL_BACKEND = 'backend.backends.email_backend.EmailBackend'
 # DEFAULT_FROM_EMAIL = 'noreply@yourapp.com'
 
 
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
 
 
 # settings.py
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # Cache settings (using Redis recommended, but local memory works too)
+
+
+
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#         'LOCATION': 'unique-snowflake',
+#     }
+# }
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'unique-snowflake',
+        'TIMEOUT': 300,  # Add timeout (5 minutes)
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,  # Maximum entries in cache
+            'CULL_FREQUENCY': 3,   # Remove 1/3 entries when max reached
+        }
     }
 }
+
+
+
+
+
+
+
+
 
 # For production, use Redis:
 # CACHES = {

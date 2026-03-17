@@ -8,6 +8,7 @@ from . import views
 from .views import delete_architecture
 from .views import useridprofile
 from .views import (
+    # OptimizedLandingPageView,
    PasswordResetRequestView,
     ResendOTPView,
     VerifyOTPView,
@@ -124,4 +125,6 @@ path('auth/register/init/', RegistrationInitView.as_view(), name='register-init'
  path('user-profile/<int:user_id>/', useridprofile.as_view(), name='user-profile-by-id'),
 
 
+
+# path('landing-page/', OptimizedLandingPageView.as_view(), name='landing-page'),
 ]

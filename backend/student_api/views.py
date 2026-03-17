@@ -99,50 +99,6 @@ class AdminTokenObtainPairView(TokenObtainPairView):
 
 
 
-
-# class FormViewSet(viewsets.ModelViewSet):
-#     serializer_class = FormSerializer
-#     permission_classes = [permissions.AllowAny]
-#     queryset = Form.objects.all()
-    
-#     def perform_create(self, serializer):
-#         serializer.save()
-    
-#     @action(detail=True, methods=['post'])
-#     def publish(self, request, pk=None):
-#         form = self.get_object()
-#         form.is_published = True
-#         form.save()
-#         return Response({'status': 'form published'})
-    
-#     @action(detail=True, methods=['post'])
-#     def unpublish(self, request, pk=None):
-#         form = self.get_object()
-#         form.is_published = False
-#         form.save()
-#         return Response({'status': 'form unpublished'})
-    
-#     @action(detail=False, methods=['get'])
-#     def by_architecture(self, request):
-#         """Get forms for a specific architecture"""
-#         architecture_id = request.query_params.get('architecture_id')
-#         if not architecture_id:
-#             return Response(
-#                 {'error': 'architecture_id parameter is required'},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-        
-#         try:
-#             architecture = Architecture.objects.get(id=architecture_id)
-#             forms = Form.objects.filter(architecture=architecture, is_active=True)
-#             serializer = FormSerializer(forms, many=True)
-#             return Response(serializer.data)
-#         except Architecture.DoesNotExist:
-#             return Response(
-#                 {'error': 'Architecture not found'},
-#                 status=status.HTTP_404_NOT_FOUND
-#             )
-
 class FormViewSet(viewsets.ModelViewSet):
     serializer_class = FormSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -656,76 +612,6 @@ class FormSubmitView(APIView):
         viewset.kwargs = {'pk': pk}
         return viewset.submit(request, pk)
 
-# Architecture Views
-# class ArchitectureViewSet(viewsets.ModelViewSet):
-#     serializer_class = ArchitectureSerializer
-#     permission_classes = [permissions.IsAuthenticated]
-#     queryset = Architecture.objects.all()
-    
-#     def get_serializer_class(self):
-#         if self.action in ['create', 'update', 'partial_update']:
-#             return ArchitectureCreateSerializer
-#         return ArchitectureSerializer
-    
-#     def perform_create(self, serializer):
-#         # Handle both authenticated and anonymous users
-#         if self.request.user.is_authenticated:
-#             serializer.save(created_by=self.request.user)
-#         else:
-#             # Save without the created_by field for anonymous users
-#             serializer.save()
-    
-#     def perform_update(self, serializer):
-#         # Similar handling for updates if needed
-#         if self.request.user.is_authenticated:
-#             serializer.save(updated_by=self.request.user)
-#         else:
-#             serializer.save()
-    
-#     @action(detail=False, methods=['get'])
-#     def tree(self, request):
-#         """Get the full architecture tree"""
-#         root_nodes = Architecture.objects.filter(parent__isnull=True)
-#         serializer = ArchitectureTreeSerializer(root_nodes, many=True)
-#         return Response(serializer.data)
-    
-#     @action(detail=True, methods=['get'])
-#     def children(self, request, pk=None):
-#         """Get children of a specific architecture node"""
-#         architecture = self.get_object()
-#         children = architecture.children.all()
-#         serializer = ArchitectureSerializer(children, many=True)
-#         return Response(serializer.data)
-    
-#     @action(detail=True, methods=['get'])
-#     def hierarchy(self, request, pk=None):
-#         """Get the full hierarchy path for a node"""
-#         architecture = self.get_object()
-#         return Response({'hierarchy': architecture.get_full_hierarchy()})
-    
-#     @action(detail=True, methods=['get'])
-#     def statistics(self, request, pk=None):
-#         """Get statistics for a node and its children"""
-#         architecture = self.get_object()
-#         serializer = ArchitectureStatisticsSerializer(architecture)
-#         return Response(serializer.data)
-    
-#     @action(detail=True, methods=['get'])
-#     def forms(self, request, pk=None):
-#         """Get forms associated with this architecture"""
-#         architecture = self.get_object()
-#         forms = Form.objects.filter(architecture=architecture, is_active=True)
-#         serializer = FormSerializer(forms, many=True)
-#         return Response(serializer.data)
-    
-#     @action(detail=True, methods=['get'])
-#     def tokens(self, request, pk=None):
-#         """Get tokens associated with this architecture"""
-#         architecture = self.get_object()
-#         tokens = FormToken.objects.filter(architecture=architecture)
-#         serializer = FormTokenSerializer(tokens, many=True)
-#         return Response(serializer.data)
-#20-10-2025--======================================================--------------
 class ArchitectureViewSet(viewsets.ModelViewSet):
     serializer_class = ArchitectureSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -828,14 +714,7 @@ class ArchitectureViewSet(viewsets.ModelViewSet):
         )
         serializer = FormTokenSerializer(tokens, many=True)
         return Response(serializer.data)
-# class ArchitectureTreeView(APIView):
-#     permission_classes = [permissions.IsAuthenticated]
-    
-#     def get(self, request):
-#         """Get the complete architecture tree structure"""
-#         root_nodes = Architecture.objects.filter(parent__isnull=True)
-#         serializer = ArchitectureTreeSerializer(root_nodes, many=True)
-#         return Response(serializer.data)
+
 class ArchitectureTreeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
@@ -1285,644 +1164,12 @@ from .models import Architecture, FormSubmission, FormField, FieldResponse, Form
 from .serializers import ArchitectureFieldResponseSerializer
 import json
 
-# class ArchitectureResponsesView(generics.ListAPIView):
-#     """
-#     Retrieve all field responses for a specific architecture ID
-#     Includes both submitted responses and empty tokens for missing fields
-#     """
-#     serializer_class = ArchitectureFieldResponseSerializer
-
-#     def get_queryset(self):
-#         architecture_id = self.kwargs['architecture_id']
-#         return FieldResponse.objects.filter(
-#             submission__token__architecture_id=architecture_id
-#         ).select_related(
-#             'field', 
-#             'submission', 
-#             'submission__token',
-#             'submission__token__architecture'
-#         ).only(
-#             'id', 'field_id', 'value_text', 'value_number', 'value_date',
-#             'value_boolean', 'value_alphanumeric', 'created_at',
-#             'submission__id', 'submission__token__architecture_id',
-#             'submission__token__architecture__name', 'submission__token__token',
-#             'field__label', 'field__field_type', 'field__order', 'field__is_required'
-#         )
-
-#     def list(self, request, *args, **kwargs):
-#         architecture_id = kwargs['architecture_id']
-        
-#         try:
-#             # Check if architecture exists
-#             architecture = Architecture.objects.get(id=architecture_id)
-#         except Architecture.DoesNotExist:
-#             return Response(
-#                 {"error": "Architecture not found"}, 
-#                 status=status.HTTP_404_NOT_FOUND
-#             )
-
-#         # Get all tokens for this architecture
-#         tokens = FormToken.objects.filter(architecture_id=architecture_id)
-        
-#         if not tokens.exists():
-#             return Response(self.get_empty_responses(architecture))
-
-#         # Get all form fields from all forms used in tokens
-#         form_ids = tokens.values_list('form_id', flat=True).distinct()
-#         all_form_fields = FormField.objects.filter(
-#             form_id__in=form_ids, 
-#             is_active=True
-#         ).order_by('order').only(
-#             'id', 'label', 'field_type', 'order', 'is_required', 'form_id'
-#         )
-        
-#         # Get existing responses (exclude image fields from initial query)
-#         existing_responses = FieldResponse.objects.filter(
-#             submission__token__architecture_id=architecture_id
-#         ).exclude(field__field_type='image').select_related(
-#             'field', 'submission', 'submission__token', 'submission__token__architecture'
-#         )
-        
-#         # Handle image responses separately to avoid encoding issues
-#         image_responses = FieldResponse.objects.filter(
-#             submission__token__architecture_id=architecture_id,
-#             field__field_type='image'
-#         ).select_related(
-#             'field', 'submission', 'submission__token', 'submission__token__architecture'
-#         )
-
-#         # Create complete response data
-#         response_data = self.prepare_complete_response_data(
-#             architecture, tokens, all_form_fields, existing_responses, image_responses
-#         )
-
-#         return Response(response_data)
-
-#     def get_empty_responses(self, architecture):
-#         """Return empty response structure when no tokens exist"""
-#         return {
-#             'architecture_id': architecture.id,
-#             'architecture_name': str(architecture),
-#             'token_count': 0,
-#             'submission_count': 0,
-#             'tokens': [],
-#             'submission_ids': [],
-#             'responses': []
-#         }
-
-#     def prepare_complete_response_data(self, architecture, tokens, all_form_fields, existing_responses, image_responses):
-#         """Prepare complete response data including empty tokens"""
-        
-#         # Get all submissions for these tokens
-#         submissions = FormSubmission.objects.filter(token__in=tokens)
-        
-#         # Combine all responses
-#         all_responses = list(existing_responses) + list(image_responses)
-        
-#         # Group responses by field for easy lookup
-#         responses_by_field = {}
-#         for response in all_responses:
-#             field_id = response.field_id
-#             if field_id not in responses_by_field:
-#                 responses_by_field[field_id] = []
-#             responses_by_field[field_id].append(response)
-
-#         # Prepare response data
-#         response_data = {
-#             'architecture_id': architecture.id,
-#             'architecture_name': str(architecture),
-#             'token_count': tokens.count(),
-#             'submission_count': submissions.count(),
-#             'tokens': list(tokens.values_list('token', flat=True)),
-#             'submission_ids': list(submissions.values_list('id', flat=True)),
-#             'responses': []
-#         }
-
-#         for field in all_form_fields:
-#             field_responses = responses_by_field.get(field.id, [])
-            
-#             if field_responses:
-#                 # Serialize existing responses
-#                 for response in field_responses:
-#                     try:
-#                         serializer = self.get_serializer(response, context={'request': self.request})
-#                         response_data['responses'].append(serializer.data)
-#                     except (UnicodeDecodeError, ValueError) as e:
-#                         # Handle problematic responses gracefully
-#                         error_response = {
-#                             'id': response.id,
-#                             'submission_id': response.submission.id if response.submission else None,
-#                             'architecture_id': architecture.id,
-#                             'architecture_name': str(architecture),
-#                             'token': response.submission.token.token if response.submission and response.submission.token else None,
-#                             'field': field.id,
-#                             'field_label': field.label,
-#                             'field_type': field.field_type,
-#                             'field_order': field.order,
-#                             'field_required': field.is_required,
-#                             'value': f"Error: Could not decode value for {field.field_type} field",
-#                             'created_at': response.created_at.isoformat() if response.created_at else None
-#                         }
-#                         response_data['responses'].append(error_response)
-#             else:
-#                 # Create empty token for missing field
-#                 empty_response_data = {
-#                     'id': None,
-#                     'submission_id': None,
-#                     'architecture_id': architecture.id,
-#                     'architecture_name': str(architecture),
-#                     'token': None,
-#                     'field': field.id,
-#                     'field_label': field.label,
-#                     'field_type': field.field_type,
-#                     'field_order': field.order,
-#                     'field_required': field.is_required,
-#                     'value': None,
-#                     'created_at': None
-#                 }
-#                 response_data['responses'].append(empty_response_data)
-
-#         return response_data
-
-#==-------- above code is old code -=========================================================19-10-2025++++++++++++++++++++++=================---------=========================
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication 
 
-# class ArchitectureResponsesView(generics.ListAPIView):
-#     """
-#     Retrieve all field responses for a specific architecture ID
-#     Includes both submitted responses and empty tokens for missing fields
-#     Accessible by architecture owner and admin users
-#     """
-#     serializer_class = ArchitectureFieldResponseSerializer
-#     authentication_classes = [JWTAuthentication, SessionAuthentication, TokenAuthentication]
-#     permission_classes = [IsAuthenticated]
-
-#     def get_queryset(self):
-#         architecture_id = self.kwargs['architecture_id']
-#         user = self.request.user
-        
-#         # Base queryset - admin users can see all, regular users only their own
-#         if user.is_staff or user.is_superuser:
-#             # Admin users can access all responses
-#             return FieldResponse.objects.filter(
-#                 submission__token__architecture_id=architecture_id
-#             ).select_related(
-#                 'field', 
-#                 'submission', 
-#                 'submission__token',
-#                 'submission__token__architecture'
-#             ).only(
-#                 'id', 'field_id', 'value_text', 'value_number', 'value_date',
-#                 'value_boolean', 'value_alphanumeric', 'created_at',
-#                 'submission__id', 'submission__token__architecture_id',
-#                 'submission__token__architecture__name', 'submission__token__token',
-#                 'field__label', 'field__field_type', 'field__order', 'field__is_required'
-#             )
-#         else:
-#             # Regular users can only access their own architectures
-#             return FieldResponse.objects.filter(
-#                 submission__token__architecture_id=architecture_id,
-#                 submission__token__architecture__created_by=user
-#             ).select_related(
-#                 'field', 
-#                 'submission', 
-#                 'submission__token',
-#                 'submission__token__architecture'
-#             ).only(
-#                 'id', 'field_id', 'value_text', 'value_number', 'value_date',
-#                 'value_boolean', 'value_alphanumeric', 'created_at',
-#                 'submission__id', 'submission__token__architecture_id',
-#                 'submission__token__architecture__name', 'submission__token__token',
-#                 'field__label', 'field__field_type', 'field__order', 'field__is_required'
-#             )
-
-#     def has_permission_to_access_architecture(self, architecture_id, user):
-#         """
-#         Check if user has permission to access this architecture
-#         Returns architecture object if user has permission, None otherwise
-#         """
-#         try:
-#             if user.is_staff or user.is_superuser:
-#                 # Admin users can access any architecture
-#                 return Architecture.objects.get(id=architecture_id)
-#             else:
-#                 # Regular users can only access their own architectures
-#                 return Architecture.objects.get(id=architecture_id, created_by=user)
-#         except Architecture.DoesNotExist:
-#             return None
-
-#     def list(self, request, *args, **kwargs):
-#         # Debug information to help troubleshoot
-#         print(f"User: {request.user}")
-#         print(f"User authenticated: {request.user.is_authenticated}")
-#         print(f"User is active: {request.user.is_active}")
-#         print(f"User is staff: {request.user.is_staff}")
-#         print(f"User is superuser: {request.user.is_superuser}")
-#         print(f"User groups: {[group.name for group in request.user.groups.all()]}")
-        
-#         # Check if user is authenticated (should be handled by permission_classes, but double-check)
-#         if not request.user.is_authenticated:
-#             return Response(
-#                 {"error": "Authentication required"}, 
-#                 status=status.HTTP_401_UNAUTHORIZED
-#             )
-        
-#         architecture_id = kwargs['architecture_id']
-#         user = request.user
-        
-#         # Check if user has permission to access this architecture
-#         architecture = self.has_permission_to_access_architecture(architecture_id, user)
-#         if not architecture:
-#             return Response(
-#                 {"error": "Architecture not found or you don't have permission to access it"}, 
-#                 status=status.HTTP_404_NOT_FOUND
-#             )
-
-#         # Get all tokens for this architecture
-#         # For admin users, get all tokens; for regular users, this is already filtered by ownership
-#         if user.is_staff or user.is_superuser:
-#             tokens = FormToken.objects.filter(architecture_id=architecture_id)
-#         else:
-#             tokens = FormToken.objects.filter(architecture_id=architecture_id)
-        
-#         if not tokens.exists():
-#             return Response(self.get_empty_responses(architecture))
-
-#         # Get all form fields from all forms used in tokens
-#         form_ids = tokens.values_list('form_id', flat=True).distinct()
-#         all_form_fields = FormField.objects.filter(
-#             form_id__in=form_ids, 
-#             is_active=True
-#         ).order_by('order').only(
-#             'id', 'label', 'field_type', 'order', 'is_required', 'form_id'
-#         )
-        
-#         # Get existing responses (exclude image fields from initial query)
-#         # Use the appropriate queryset based on user role
-#         if user.is_staff or user.is_superuser:
-#             existing_responses = FieldResponse.objects.filter(
-#                 submission__token__architecture_id=architecture_id
-#             ).exclude(field__field_type='image').select_related(
-#                 'field', 'submission', 'submission__token', 'submission__token__architecture'
-#             )
-            
-#             image_responses = FieldResponse.objects.filter(
-#                 submission__token__architecture_id=architecture_id,
-#                 field__field_type='image'
-#             ).select_related(
-#                 'field', 'submission', 'submission__token', 'submission__token__architecture'
-#             )
-#         else:
-#             existing_responses = FieldResponse.objects.filter(
-#                 submission__token__architecture_id=architecture_id,
-#                 submission__token__architecture__created_by=user
-#             ).exclude(field__field_type='image').select_related(
-#                 'field', 'submission', 'submission__token', 'submission__token__architecture'
-#             )
-            
-#             image_responses = FieldResponse.objects.filter(
-#                 submission__token__architecture_id=architecture_id,
-#                 submission__token__architecture__created_by=user,
-#                 field__field_type='image'
-#             ).select_related(
-#                 'field', 'submission', 'submission__token', 'submission__token__architecture'
-#             )
-
-#         # Create complete response data
-#         response_data = self.prepare_complete_response_data(
-#             architecture, tokens, all_form_fields, existing_responses, image_responses
-#         )
-
-#         return Response(response_data)
-
-#     def get_empty_responses(self, architecture):
-#         """Return empty response structure when no tokens exist"""
-#         return {
-#             'architecture_id': architecture.id,
-#             'architecture_name': str(architecture),
-#             'token_count': 0,
-#             'submission_count': 0,
-#             'tokens': [],
-#             'submission_ids': [],
-#             'responses': []
-#         }
-
-#     def prepare_complete_response_data(self, architecture, tokens, all_form_fields, existing_responses, image_responses):
-#         """Prepare complete response data including empty tokens"""
-        
-#         # Get all submissions for these tokens
-#         submissions = FormSubmission.objects.filter(token__in=tokens)
-        
-#         # Combine all responses
-#         all_responses = list(existing_responses) + list(image_responses)
-        
-#         # Group responses by field for easy lookup
-#         responses_by_field = {}
-#         for response in all_responses:
-#             field_id = response.field_id
-#             if field_id not in responses_by_field:
-#                 responses_by_field[field_id] = []
-#             responses_by_field[field_id].append(response)
-
-#         # Prepare response data
-#         response_data = {
-#             'architecture_id': architecture.id,
-#             'architecture_name': str(architecture),
-#             'token_count': tokens.count(),
-#             'submission_count': submissions.count(),
-#             'tokens': list(tokens.values_list('token', flat=True)),
-#             'submission_ids': list(submissions.values_list('id', flat=True)),
-#             'responses': []
-#         }
-
-#         for field in all_form_fields:
-#             field_responses = responses_by_field.get(field.id, [])
-            
-#             if field_responses:
-#                 # Serialize existing responses
-#                 for response in field_responses:
-#                     try:
-#                         serializer = self.get_serializer(response, context={'request': self.request})
-#                         response_data['responses'].append(serializer.data)
-#                     except (UnicodeDecodeError, ValueError) as e:
-#                         # Handle problematic responses gracefully
-#                         error_response = {
-#                             'id': response.id,
-#                             'submission_id': response.submission.id if response.submission else None,
-#                             'architecture_id': architecture.id,
-#                             'architecture_name': str(architecture),
-#                             'token': response.submission.token.token if response.submission and response.submission.token else None,
-#                             'field': field.id,
-#                             'field_label': field.label,
-#                             'field_type': field.field_type,
-#                             'field_order': field.order,
-#                             'field_required': field.is_required,
-#                             'value': f"Error: Could not decode value for {field.field_type} field",
-#                             'created_at': response.created_at.isoformat() if response.created_at else None
-#                         }
-#                         response_data['responses'].append(error_response)
-#             else:
-#                 # Create empty token for missing field
-#                 empty_response_data = {
-#                     'id': None,
-#                     'submission_id': None,
-#                     'architecture_id': architecture.id,
-#                     'architecture_name': str(architecture),
-#                     'token': None,
-#                     'field': field.id,
-#                     'field_label': field.label,
-#                     'field_type': field.field_type,
-#                     'field_order': field.order,
-#                     'field_required': field.is_required,
-#                     'value': None,
-#                     'created_at': None
-#                 }
-#                 response_data['responses'].append(empty_response_data)
-
-#         return response_data
-
-
-
-    # class ArchitectureResponsesView(generics.ListAPIView):
-    #     """
-    #     Retrieve all field responses for a specific architecture ID
-    #     Includes both submitted responses and empty tokens for missing fields
-    #     Accessible by architecture owner and admin users
-    #     """
-    #     serializer_class = ArchitectureFieldResponseSerializer
-    #     authentication_classes = [JWTAuthentication, SessionAuthentication, TokenAuthentication]
-    #     permission_classes = [IsAuthenticated]
-
-    #     def get_queryset(self):
-    #         architecture_id = self.kwargs['architecture_id']
-    #         user = self.request.user
-            
-    #         # Base queryset - admin users can see all, regular users only their own
-    #         if user.is_staff or user.is_superuser:
-    #             # Admin users can access all responses
-    #             return FieldResponse.objects.filter(
-    #                 submission__token__architecture_id=architecture_id
-    #             ).select_related(
-    #                 'field', 
-    #                 'submission', 
-    #                 'submission__token',
-    #                 'submission__token__architecture'
-    #             ).only(
-    #                 'id', 'field_id', 'value_text', 'value_number', 'value_date',
-    #                 'value_boolean', 'value_alphanumeric', 'created_at',
-    #                 'submission__id', 'submission__token__architecture_id',
-    #                 'submission__token__architecture__name', 'submission__token__token',
-    #                 'field__label', 'field__field_type', 'field__order', 'field__is_required'
-    #             )
-    #         else:
-    #             # Regular users can only access their own architectures
-    #             return FieldResponse.objects.filter(
-    #                 submission__token__architecture_id=architecture_id,
-    #                 submission__token__architecture__created_by=user
-    #             ).select_related(
-    #                 'field', 
-    #                 'submission', 
-    #                 'submission__token',
-    #                 'submission__token__architecture'
-    #             ).only(
-    #                 'id', 'field_id', 'value_text', 'value_number', 'value_date',
-    #                 'value_boolean', 'value_alphanumeric', 'created_at',
-    #                 'submission__id', 'submission__token__architecture_id',
-    #                 'submission__token__architecture__name', 'submission__token__token',
-    #                 'field__label', 'field__field_type', 'field__order', 'field__is_required'
-    #             )
-
-    #     def has_permission_to_access_architecture(self, architecture_id, user):
-    #         """
-    #         Check if user has permission to access this architecture
-    #         Returns architecture object if user has permission, None otherwise
-    #         """
-    #         try:
-    #             if user.is_staff or user.is_superuser:
-    #                 # Admin users can access any architecture
-    #                 return Architecture.objects.get(id=architecture_id)
-    #             else:
-    #                 # Regular users can only access their own architectures
-    #                 return Architecture.objects.get(id=architecture_id, created_by=user)
-    #         except Architecture.DoesNotExist:
-    #             return None
-
-    #     def list(self, request, *args, **kwargs):
-    #         # Debug information to help troubleshoot
-    #         print(f"User: {request.user}")
-    #         print(f"User authenticated: {request.user.is_authenticated}")
-    #         print(f"User is active: {request.user.is_active}")
-    #         print(f"User is staff: {request.user.is_staff}")
-    #         print(f"User is superuser: {request.user.is_superuser}")
-    #         print(f"User groups: {[group.name for group in request.user.groups.all()]}")
-            
-    #         # Check if user is authenticated (should be handled by permission_classes, but double-check)
-    #         if not request.user.is_authenticated:
-    #             return Response(
-    #                 {"error": "Authentication required"}, 
-    #                 status=status.HTTP_401_UNAUTHORIZED
-    #             )
-            
-    #         architecture_id = kwargs['architecture_id']
-    #         user = request.user
-            
-    #         # Check if user has permission to access this architecture
-    #         architecture = self.has_permission_to_access_architecture(architecture_id, user)
-    #         if not architecture:
-    #             return Response(
-    #                 {"error": "Architecture not found or you don't have permission to access it"}, 
-    #                 status=status.HTTP_404_NOT_FOUND
-    #             )
-
-    #         # Get all tokens for this architecture
-    #         # For admin users, get all tokens; for regular users, this is already filtered by ownership
-    #         if user.is_staff or user.is_superuser:
-    #             tokens = FormToken.objects.filter(architecture_id=architecture_id)
-    #         else:
-    #             tokens = FormToken.objects.filter(architecture_id=architecture_id)
-            
-    #         if not tokens.exists():
-    #             return Response(self.get_empty_responses(architecture))
-
-    #         # Get all form fields from all forms used in tokens
-    #         form_ids = tokens.values_list('form_id', flat=True).distinct()
-    #         all_form_fields = FormField.objects.filter(
-    #             form_id__in=form_ids, 
-    #             is_active=True
-    #         ).order_by('order').only(
-    #             'id', 'label', 'field_type', 'order', 'is_required', 'form_id'
-    #         )
-            
-    #         # Get existing responses (exclude image fields from initial query)
-    #         # Use the appropriate queryset based on user role
-    #         if user.is_staff or user.is_superuser:
-    #             existing_responses = FieldResponse.objects.filter(
-    #                 submission__token__architecture_id=architecture_id
-    #             ).exclude(field__field_type='image').select_related(
-    #                 'field', 'submission', 'submission__token', 'submission__token__architecture'
-    #             )
-                
-    #             image_responses = FieldResponse.objects.filter(
-    #                 submission__token__architecture_id=architecture_id,
-    #                 field__field_type='image'
-    #             ).select_related(
-    #                 'field', 'submission', 'submission__token', 'submission__token__architecture'
-    #             )
-    #         else:
-    #             existing_responses = FieldResponse.objects.filter(
-    #                 submission__token__architecture_id=architecture_id,
-    #                 submission__token__architecture__created_by=user
-    #             ).exclude(field__field_type='image').select_related(
-    #                 'field', 'submission', 'submission__token', 'submission__token__architecture'
-    #             )
-                
-    #             image_responses = FieldResponse.objects.filter(
-    #                 submission__token__architecture_id=architecture_id,
-    #                 submission__token__architecture__created_by=user,
-    #                 field__field_type='image'
-    #             ).select_related(
-    #                 'field', 'submission', 'submission__token', 'submission__token__architecture'
-    #             )
-
-    #         # Create complete response data
-    #         response_data = self.prepare_complete_response_data(
-    #             architecture, tokens, all_form_fields, existing_responses, image_responses
-    #         )
-
-    #         return Response(response_data)
-
-    #     def get_empty_responses(self, architecture):
-    #         """Return empty response structure when no tokens exist"""
-    #         return {
-    #             'architecture_id': architecture.id,
-    #             'architecture_name': str(architecture),
-    #             'token_count': 0,
-    #             'submission_count': 0,
-    #             'tokens': [],
-    #             'submission_ids': [],
-    #             'responses': []
-    #         }
-
-    #     def prepare_complete_response_data(self, architecture, tokens, all_form_fields, existing_responses, image_responses):
-    #         """Prepare complete response data organized by submission"""
-            
-    #         # Get all submissions for these tokens, ordered by ID
-    #         submissions = FormSubmission.objects.filter(token__in=tokens).order_by('id')
-            
-    #         # Combine all responses
-    #         all_responses = list(existing_responses) + list(image_responses)
-            
-    #         # Group responses by submission_id and field_id for easy lookup
-    #         responses_by_submission = {}
-    #         for response in all_responses:
-    #             submission_id = response.submission_id
-    #             if submission_id not in responses_by_submission:
-    #                 responses_by_submission[submission_id] = {}
-    #             responses_by_submission[submission_id][response.field_id] = response
-
-    #         # Prepare response data structure
-    #         response_data = {
-    #             'architecture_id': architecture.id,
-    #             'architecture_name': str(architecture),
-    #             'token_count': tokens.count(),
-    #             'submission_count': submissions.count(),
-    #             'tokens': list(tokens.values_list('token', flat=True)),
-    #             'submission_ids': list(submissions.values_list('id', flat=True)),
-    #             'responses': []
-    #         }
-
-    #         # For each submission, create entries for all fields
-    #         for submission in submissions:
-    #             submission_responses = responses_by_submission.get(submission.id, {})
-                
-    #             for field in all_form_fields:
-    #                 response = submission_responses.get(field.id)
-                    
-    #                 if response:
-    #                     # Existing response found for this field in this submission
-    #                     try:
-    #                         serializer = self.get_serializer(response, context={'request': self.request})
-    #                         response_data['responses'].append(serializer.data)
-    #                     except (UnicodeDecodeError, ValueError) as e:
-    #                         # Handle problematic responses gracefully
-    #                         error_response = {
-    #                             'id': response.id,
-    #                             'submission_id': submission.id,
-    #                             'architecture_id': architecture.id,
-    #                             'architecture_name': str(architecture),
-    #                             'token': submission.token.token if submission.token else None,
-    #                             'field': field.id,
-    #                             'field_label': field.label,
-    #                             'field_type': field.field_type,
-    #                             'field_order': field.order,
-    #                             'field_required': field.is_required,
-    #                             'value': f"Error: Could not decode value for {field.field_type} field",
-    #                             'created_at': response.created_at.isoformat() if response.created_at else None
-    #                         }
-    #                         response_data['responses'].append(error_response)
-    #                 else:
-    #                     # No response for this field in this submission - create null entry
-    #                     null_response = {
-    #                         'id': None,
-    #                         'submission_id': submission.id,
-    #                         'architecture_id': architecture.id,
-    #                         'architecture_name': str(architecture),
-    #                         'token': submission.token.token if submission.token else None,
-    #                         'field': field.id,
-    #                         'field_label': field.label,
-    #                         'field_type': field.field_type,
-    #                         'field_order': field.order,
-    #                         'field_required': field.is_required,
-    #                         'value': None,
-    #                         'created_at': None
-    #                     }
-    #                     response_data['responses'].append(null_response)
-
-    #         return response_data
 
 
 
@@ -2150,371 +1397,6 @@ class ArchitectureResponsesView(generics.ListAPIView):
 
     
 
-#--------------------below code is old code main 24/1:20-=====================-----------------------------------
-
-# class ArchitectureResponsesView(generics.ListAPIView):
-#     """
-#     Retrieve all field responses for a specific architecture ID
-#     Includes both submitted responses and empty tokens for missing fields
-#     """
-#     serializer_class = ArchitectureFieldResponseSerializer
-#     authentication_classes = [JWTAuthentication, SessionAuthentication, TokenAuthentication]
-#     permission_classes = [IsAuthenticated]
-
-#     def get_queryset(self):
-#         architecture_id = self.kwargs['architecture_id']
-#         user = self.request.user
-        
-#         # Filter to only include architectures created by the current user
-#         return FieldResponse.objects.filter(
-#             submission__token__architecture_id=architecture_id,
-#             submission__token__architecture__created_by=user  # Add this filter
-#         ).select_related(
-#             'field', 
-#             'submission', 
-#             'submission__token',
-#             'submission__token__architecture'
-#         ).only(
-#             'id', 'field_id', 'value_text', 'value_number', 'value_date',
-#             'value_boolean', 'value_alphanumeric', 'created_at',
-#             'submission__id', 'submission__token__architecture_id',
-#             'submission__token__architecture__name', 'submission__token__token',
-#             'field__label', 'field__field_type', 'field__order', 'field__is_required'
-#         )
-
-#     def list(self, request, *args, **kwargs):
-#         # Debug information to help troubleshoot
-#         print(f"User: {request.user}")
-#         print(f"User authenticated: {request.user.is_authenticated}")
-#         print(f"User is active: {request.user.is_active}")
-#         print(f"User is staff: {request.user.is_staff}")
-#         print(f"User is superuser: {request.user.is_superuser}")
-#         print(f"User groups: {[group.name for group in request.user.groups.all()]}")
-        
-#         # Check if user is authenticated (should be handled by permission_classes, but double-check)
-#         if not request.user.is_authenticated:
-#             return Response(
-#                 {"error": "Authentication required"}, 
-#                 status=status.HTTP_401_UNAUTHORIZED
-#             )
-        
-#         architecture_id = kwargs['architecture_id']
-#         user = request.user
-        
-#         try:
-#             # Check if architecture exists AND is owned by the current user
-#             architecture = Architecture.objects.get(
-#                 id=architecture_id,
-#                 created_by=user  # Add this filter
-#             )
-#         except Architecture.DoesNotExist:
-#             return Response(
-#                 {"error": "Architecture not found or you don't have permission to access it"}, 
-#                 status=status.HTTP_404_NOT_FOUND
-#             )
-
-#         # Get all tokens for this architecture (already filtered by user via architecture)
-#         tokens = FormToken.objects.filter(architecture_id=architecture_id)
-        
-#         if not tokens.exists():
-#             return Response(self.get_empty_responses(architecture))
-
-#         # Get all form fields from all forms used in tokens
-#         form_ids = tokens.values_list('form_id', flat=True).distinct()
-#         all_form_fields = FormField.objects.filter(
-#             form_id__in=form_ids, 
-#             is_active=True
-#         ).order_by('order').only(
-#             'id', 'label', 'field_type', 'order', 'is_required', 'form_id'
-#         )
-        
-#         # Get existing responses (exclude image fields from initial query)
-#         existing_responses = FieldResponse.objects.filter(
-#             submission__token__architecture_id=architecture_id
-#         ).exclude(field__field_type='image').select_related(
-#             'field', 'submission', 'submission__token', 'submission__token__architecture'
-#         )
-        
-#         # Handle image responses separately to avoid encoding issues
-#         image_responses = FieldResponse.objects.filter(
-#             submission__token__architecture_id=architecture_id,
-#             field__field_type='image'
-#         ).select_related(
-#             'field', 'submission', 'submission__token', 'submission__token__architecture'
-#         )
-
-#         # Create complete response data
-#         response_data = self.prepare_complete_response_data(
-#             architecture, tokens, all_form_fields, existing_responses, image_responses
-#         )
-
-#         return Response(response_data)
-
-#     def get_empty_responses(self, architecture):
-#         """Return empty response structure when no tokens exist"""
-#         return {
-#             'architecture_id': architecture.id,
-#             'architecture_name': str(architecture),
-#             'token_count': 0,
-#             'submission_count': 0,
-#             'tokens': [],
-#             'submission_ids': [],
-#             'responses': []
-#         }
-
-#     def prepare_complete_response_data(self, architecture, tokens, all_form_fields, existing_responses, image_responses):
-#         """Prepare complete response data including empty tokens"""
-        
-#         # Get all submissions for these tokens
-#         submissions = FormSubmission.objects.filter(token__in=tokens)
-        
-#         # Combine all responses
-#         all_responses = list(existing_responses) + list(image_responses)
-        
-#         # Group responses by field for easy lookup
-#         responses_by_field = {}
-#         for response in all_responses:
-#             field_id = response.field_id
-#             if field_id not in responses_by_field:
-#                 responses_by_field[field_id] = []
-#             responses_by_field[field_id].append(response)
-
-#         # Prepare response data
-#         response_data = {
-#             'architecture_id': architecture.id,
-#             'architecture_name': str(architecture),
-#             'token_count': tokens.count(),
-#             'submission_count': submissions.count(),
-#             'tokens': list(tokens.values_list('token', flat=True)),
-#             'submission_ids': list(submissions.values_list('id', flat=True)),
-#             'responses': []
-#         }
-
-#         for field in all_form_fields:
-#             field_responses = responses_by_field.get(field.id, [])
-            
-#             if field_responses:
-#                 # Serialize existing responses
-#                 for response in field_responses:
-#                     try:
-#                         serializer = self.get_serializer(response, context={'request': self.request})
-#                         response_data['responses'].append(serializer.data)
-#                     except (UnicodeDecodeError, ValueError) as e:
-#                         # Handle problematic responses gracefully
-#                         error_response = {
-#                             'id': response.id,
-#                             'submission_id': response.submission.id if response.submission else None,
-#                             'architecture_id': architecture.id,
-#                             'architecture_name': str(architecture),
-#                             'token': response.submission.token.token if response.submission and response.submission.token else None,
-#                             'field': field.id,
-#                             'field_label': field.label,
-#                             'field_type': field.field_type,
-#                             'field_order': field.order,
-#                             'field_required': field.is_required,
-#                             'value': f"Error: Could not decode value for {field.field_type} field",
-#                             'created_at': response.created_at.isoformat() if response.created_at else None
-#                         }
-#                         response_data['responses'].append(error_response)
-#             else:
-#                 # Create empty token for missing field
-#                 empty_response_data = {
-#                     'id': None,
-#                     'submission_id': None,
-#                     'architecture_id': architecture.id,
-#                     'architecture_name': str(architecture),
-#                     'token': None,
-#                     'field': field.id,
-#                     'field_label': field.label,
-#                     'field_type': field.field_type,
-#                     'field_order': field.order,
-#                     'field_required': field.is_required,
-#                     'value': None,
-#                     'created_at': None
-#                 }
-#                 response_data['responses'].append(empty_response_data)
-
-#         return response_data
-#-==-------------------------------------------till here 24/1:30-==-=================================================================-
-#*******************************************************((((((((((((((((((((((((((()))))))))))))))))))))))))))
-# class ArchitectureResponsesView(generics.ListAPIView):
-#     """
-#     Retrieve all field responses for a specific architecture ID
-#     Includes both submitted responses and empty tokens for missing fields
-#     """
-#     serializer_class = ArchitectureFieldResponseSerializer
-#     authentication_classes = [JWTAuthentication, SessionAuthentication, TokenAuthentication]
-#     permission_classes = [IsAuthenticated]
-
-#     def get_queryset(self):
-#         architecture_id = self.kwargs['architecture_id']
-#         return FieldResponse.objects.filter(
-#             submission__token__architecture_id=architecture_id
-#         ).select_related(
-#             'field', 
-#             'submission', 
-#             'submission__token',
-#             'submission__token__architecture'
-#         ).only(
-#             'id', 'field_id', 'value_text', 'value_number', 'value_date',
-#             'value_boolean', 'value_alphanumeric', 'created_at',
-#             'submission__id', 'submission__token__architecture_id',
-#             'submission__token__architecture__name', 'submission__token__token',
-#             'field__label', 'field__field_type', 'field__order', 'field__is_required'
-#         )
-
-#     def list(self, request, *args, **kwargs):
-#         # Debug information to help troubleshoot
-#         print(f"User: {request.user}")
-#         print(f"User authenticated: {request.user.is_authenticated}")
-#         print(f"User is active: {request.user.is_active}")
-#         print(f"User is staff: {request.user.is_staff}")
-#         print(f"User is superuser: {request.user.is_superuser}")
-#         print(f"User groups: {[group.name for group in request.user.groups.all()]}")
-        
-#         # Check if user is authenticated (should be handled by permission_classes, but double-check)
-#         if not request.user.is_authenticated:
-#             return Response(
-#                 {"error": "Authentication required"}, 
-#                 status=status.HTTP_401_UNAUTHORIZED
-#             )
-        
-#         architecture_id = kwargs['architecture_id']
-        
-#         try:
-#             # Check if architecture exists
-#             architecture = Architecture.objects.get(id=architecture_id)
-#         except Architecture.DoesNotExist:
-#             return Response(
-#                 {"error": "Architecture not found"}, 
-#                 status=status.HTTP_404_NOT_FOUND
-#             )
-
-#         # Get all tokens for this architecture
-#         tokens = FormToken.objects.filter(architecture_id=architecture_id)
-        
-#         if not tokens.exists():
-#             return Response(self.get_empty_responses(architecture))
-
-#         # Get all form fields from all forms used in tokens
-#         form_ids = tokens.values_list('form_id', flat=True).distinct()
-#         all_form_fields = FormField.objects.filter(
-#             form_id__in=form_ids, 
-#             is_active=True
-#         ).order_by('order').only(
-#             'id', 'label', 'field_type', 'order', 'is_required', 'form_id'
-#         )
-        
-#         # Get existing responses (exclude image fields from initial query)
-#         existing_responses = FieldResponse.objects.filter(
-#             submission__token__architecture_id=architecture_id
-#         ).exclude(field__field_type='image').select_related(
-#             'field', 'submission', 'submission__token', 'submission__token__architecture'
-#         )
-        
-#         # Handle image responses separately to avoid encoding issues
-#         image_responses = FieldResponse.objects.filter(
-#             submission__token__architecture_id=architecture_id,
-#             field__field_type='image'
-#         ).select_related(
-#             'field', 'submission', 'submission__token', 'submission__token__architecture'
-#         )
-
-#         # Create complete response data
-#         response_data = self.prepare_complete_response_data(
-#             architecture, tokens, all_form_fields, existing_responses, image_responses
-#         )
-
-#         return Response(response_data)
-
-#     def get_empty_responses(self, architecture):
-#         """Return empty response structure when no tokens exist"""
-#         return {
-#             'architecture_id': architecture.id,
-#             'architecture_name': str(architecture),
-#             'token_count': 0,
-#             'submission_count': 0,
-#             'tokens': [],
-#             'submission_ids': [],
-#             'responses': []
-#         }
-
-#     def prepare_complete_response_data(self, architecture, tokens, all_form_fields, existing_responses, image_responses):
-#         """Prepare complete response data including empty tokens"""
-        
-#         # Get all submissions for these tokens
-#         submissions = FormSubmission.objects.filter(token__in=tokens)
-        
-#         # Combine all responses
-#         all_responses = list(existing_responses) + list(image_responses)
-        
-#         # Group responses by field for easy lookup
-#         responses_by_field = {}
-#         for response in all_responses:
-#             field_id = response.field_id
-#             if field_id not in responses_by_field:
-#                 responses_by_field[field_id] = []
-#             responses_by_field[field_id].append(response)
-
-#         # Prepare response data
-#         response_data = {
-#             'architecture_id': architecture.id,
-#             'architecture_name': str(architecture),
-#             'token_count': tokens.count(),
-#             'submission_count': submissions.count(),
-#             'tokens': list(tokens.values_list('token', flat=True)),
-#             'submission_ids': list(submissions.values_list('id', flat=True)),
-#             'responses': []
-#         }
-
-#         for field in all_form_fields:
-#             field_responses = responses_by_field.get(field.id, [])
-            
-#             if field_responses:
-#                 # Serialize existing responses
-#                 for response in field_responses:
-#                     try:
-#                         serializer = self.get_serializer(response, context={'request': self.request})
-#                         response_data['responses'].append(serializer.data)
-#                     except (UnicodeDecodeError, ValueError) as e:
-#                         # Handle problematic responses gracefully
-#                         error_response = {
-#                             'id': response.id,
-#                             'submission_id': response.submission.id if response.submission else None,
-#                             'architecture_id': architecture.id,
-#                             'architecture_name': str(architecture),
-#                             'token': response.submission.token.token if response.submission and response.submission.token else None,
-#                             'field': field.id,
-#                             'field_label': field.label,
-#                             'field_type': field.field_type,
-#                             'field_order': field.order,
-#                             'field_required': field.is_required,
-#                             'value': f"Error: Could not decode value for {field.field_type} field",
-#                             'created_at': response.created_at.isoformat() if response.created_at else None
-#                         }
-#                         response_data['responses'].append(error_response)
-#             else:
-#                 # Create empty token for missing field
-#                 empty_response_data = {
-#                     'id': None,
-#                     'submission_id': None,
-#                     'architecture_id': architecture.id,
-#                     'architecture_name': str(architecture),
-#                     'token': None,
-#                     'field': field.id,
-#                     'field_label': field.label,
-#                     'field_type': field.field_type,
-#                     'field_order': field.order,
-#                     'field_required': field.is_required,
-#                     'value': None,
-#                     'created_at': None
-#                 }
-#                 response_data['responses'].append(empty_response_data)
-
-#         return response_data
-#code is change by 20-10-25--=========---------------------------------------------------
-#here is my updated code 19-10-2025============-------------------------------------------===================
-# Add the token-based edit and delete views
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
@@ -2626,53 +1508,6 @@ def check_user_permission(request, token_obj, action="access"):
     return False, f"You do not have permission to {action} this token's data"
 
 
-# @api_view(['GET', 'PUT', 'PATCH'])
-# @permission_classes([IsAuthenticated])
-# def edit_token_responses(request, token):
-#     """
-#     View or edit all field responses for a specific token (numeric token)
-#     """
-#     try:
-#         # Get the token object using the unified token lookup
-#         token_obj = get_token_object(token)
-#         if not token_obj:
-#             return Response(
-#                 {"error": f"Token {token} not found"}, 
-#                 status=status.HTTP_404_NOT_FOUND
-#             )
-        
-#         # Check user permission for this token
-#         has_permission, error_message = check_user_permission(request, token_obj, 
-#                                                             "edit" if request.method in ['PUT', 'PATCH'] else "view")
-#         if not has_permission:
-#             return Response(
-#                 {"error": error_message}, 
-#                 status=status.HTTP_403_FORBIDDEN
-#             )
-        
-#         # Get or create the submission for this token
-#         submission, created = FormSubmission.objects.get_or_create(
-#             token=token_obj,
-#             defaults={'form': token_obj.form}
-#         )
-        
-#         if request.method == 'GET':
-#             return handle_get_request(request, token_obj, submission, token)
-        
-#         elif request.method in ['PUT', 'PATCH']:
-#             return handle_update_request(request, token_obj, submission, token)
-        
-#     except ValueError as e:
-#         return Response(
-#             {"error": str(e)}, 
-#             status=status.HTTP_400_BAD_REQUEST
-#         )
-#     except Exception as e:
-#         logger.error(f"Error in edit_token_responses for token {token}: {str(e)}")
-#         return Response(
-#             {"error": f"Internal server error: {str(e)}"}, 
-#             status=status.HTTP_500_INTERNAL_SERVER_ERROR
-#         )  28/12/2025
 
 @api_view(['GET', 'PUT', 'PATCH'])
 @permission_classes([IsAuthenticated])
@@ -2774,51 +1609,7 @@ def handle_get_request(request, token_obj, submission, token):
     })
 
 
-# def get_safe_field_value(response, field_type, request):
-#     """
-#     Safely extract field value without causing encoding errors
-#     """
-#     try:
-#         # For image fields, return URL instead of binary data
-#         if field_type == 'image' and response.value_image:
-#             if hasattr(response.value_image, 'url'):
-#                 return request.build_absolute_uri(response.value_image.url)
-#             return str(response.value_image)
-        
-#         # For other field types, use get_value() but handle binary data
-#         raw_value = response.get_value()
-        
-#         # Handle binary data safely
-#         if isinstance(raw_value, (bytes, bytearray)):
-#             try:
-#                 # Convert binary data to base64 for safe JSON serialization
-#                 return base64.b64encode(raw_value).decode('ascii')
-#             except Exception as e:
-#                 logger.warning(f"Error encoding binary data for field {response.field.id}: {e}")
-#                 return "[Binary data]"
-        
-#         # Handle file objects
-#         if hasattr(raw_value, 'read') and hasattr(raw_value, 'seek'):
-#             try:
-#                 raw_value.seek(0)
-#                 binary_data = raw_value.read()
-#                 if binary_data:
-#                     return base64.b64encode(binary_data).decode('ascii')
-#                 return None
-#             except Exception as e:
-#                 logger.warning(f"Error reading file object for field {response.field.id}: {e}")
-#                 return "[File data]"
-        
-#         # Ensure the value is JSON-serializable
-#         if isinstance(raw_value, (int, float, bool, str, type(None))):
-#             return raw_value
-        
-#         # Convert other types to string
-#         return str(raw_value)
-        
-#     except Exception as e:
-#         logger.warning(f"Error getting safe value for field {response.field.id}: {e}")
-#         return None
+
 
 
 
@@ -2892,185 +1683,6 @@ def get_safe_field_value(response, field_type, request):
         logger.warning(f"Error getting safe value for field {response.field.id}: {e}")
         return None
 
-# def handle_update_request(request, token_obj, submission, token):
-#     """
-#     Handle PUT/PATCH requests - update field responses
-#     """
-#     # Update field responses within a transaction
-#     with transaction.atomic():
-#         updated_responses = []
-#         errors = []
-        
-#         # Get all active fields for the form
-#         form_fields = FormField.objects.filter(
-#             form=token_obj.form,
-#             is_active=True
-#         )
-        
-#         for field in form_fields:
-#             field_key = f'field_{field.id}'
-#             field_value = request.data.get(field_key)
-            
-#             # Skip if field value is not provided (for PATCH) or if it's None
-#             if field_value is None and request.method == 'PATCH':
-#                 continue
-            
-#             # For required fields, ensure value is provided
-#             if field.is_required and field_value in [None, '']:
-#                 errors.append(f"Field '{field.label}' is required")
-#                 continue
-            
-#             try:
-#                 # Get or create the field response
-#                 response, created = FieldResponse.objects.get_or_create(
-#                     submission=submission,
-#                     field=field,
-#                     defaults={'created_by': request.user if request.user.is_authenticated else None}
-#                 )
-                
-#                 # Update the response value based on field type with validation
-#                 update_response_value(response, field, field_value, errors)
-                
-#                 if errors and errors[-1].startswith(f"Field '{field.label}'"):
-#                     # Skip saving if there was a validation error for this field
-#                     continue
-                
-#                 response.save()
-                
-#                 # Get the display value for response
-#                 try:
-#                     display_value = get_safe_field_value(response, field.field_type, request)
-#                 except:
-#                     display_value = field_value
-                
-#                 updated_responses.append({
-#                     'field_id': field.id,
-#                     'field_label': field.label,
-#                     'field_type': field.field_type,
-#                     'value': display_value,
-#                     'response_id': response.id,
-#                     'updated': True
-#                 })
-                
-#             except Exception as e:
-#                 errors.append(f"Error updating field '{field.label}': {str(e)}")
-#                 continue
-        
-#         if errors:
-#             return Response({
-#                 "error": "Some fields could not be updated",
-#                 "details": errors,
-#                 "updated_responses": updated_responses
-#             }, status=status.HTTP_400_BAD_REQUEST)
-        
-#         return Response({
-#             "message": f"Successfully updated {len(updated_responses)} field responses for token {token}",
-#             "updated_responses": updated_responses,
-#             "submission_id": submission.id,
-#             "token": token,
-#             "normalized_token": normalize_token(token),
-#             "form_title": token_obj.form.title
-#         }) ******************************************28/12/2025
-
-
-
-
-# def handle_update_request(request, token_obj, submission, token):
-#     """
-#     Handle PUT/PATCH requests - update field responses including images
-#     """
-#     try:
-#         # Check content type to handle both JSON and multipart/form-data
-#         if request.content_type == 'multipart/form-data':
-#             # For form data (with file uploads)
-#             data = request.POST.dict()
-#             files = request.FILES
-#         else:
-#             # For JSON data
-#             data = request.data
-#             files = {}
-        
-#         # Get all fields for the form
-#         form_fields = FormField.objects.filter(
-#             form=token_obj.form,
-#             is_active=True
-#         )
-        
-#         updated_responses = []
-        
-#         # Process each field in the form
-#         for field in form_fields:
-#             field_key = f'field_{field.id}'
-            
-#             # Check if this field is in the request
-#             has_data = field_key in data
-#             has_file = field_key in files
-            
-#             if has_data or has_file:
-#                 # Get or create response object
-#                 response, created = FieldResponse.objects.get_or_create(
-#                     submission=submission,
-#                     field=field
-#                 )
-                
-#                 # Determine the value to set
-#                 if field.field_type == 'image' and has_file:
-#                     # For image fields with file upload
-#                     image_file = files[field_key]
-#                     response.set_value(image_file)
-#                     updated_responses.append(response)
-#                 elif field.field_type == 'image' and has_data:
-#                     # For image fields with data (could be base64 or null)
-#                     value = data.get(field_key)
-#                     if value in ['', 'null', None]:
-#                         response.clear_value()  # Clear the image
-#                     else:
-#                         response.set_value(value)  # Handle base64 or other image data
-#                     updated_responses.append(response)
-#                 elif has_data:
-#                     # For non-image fields
-#                     value = data.get(field_key)
-#                     response.set_value(value)
-#                     updated_responses.append(response)
-        
-#         # Validate required fields
-#         missing_required = []
-#         for field in form_fields.filter(is_required=True):
-#             # Check if required field has a value
-#             response_exists = FieldResponse.objects.filter(
-#                 submission=submission,
-#                 field=field
-#             ).exists()
-            
-#             if response_exists:
-#                 # Check if the response has a value
-#                 response = FieldResponse.objects.filter(
-#                     submission=submission,
-#                     field=field
-#                 ).first()
-#                 if not response or not response.has_value():
-#                     missing_required.append(field.label)
-#             else:
-#                 missing_required.append(field.label)
-        
-#         if missing_required:
-#             return Response({
-#                 'error': 'Missing required fields',
-#                 'missing_fields': missing_required
-#             }, status=400)
-        
-#         # Return success response
-#         return Response({
-#             'success': True,
-#             'message': f'Successfully updated {len(updated_responses)} field(s)',
-#             'submission_id': submission.id,
-#             'token': token,
-#             'updated_fields': [resp.field.label for resp in updated_responses]
-#         }, status=200)
-        
-#     except Exception as e:
-#         logger.error(f"Error in handle_update_request: {e}")
-#         return Response({"error": str(e)}, status=500)  
 
 
 def handle_update_request(request, token_obj, submission, token):
@@ -3206,44 +1818,6 @@ def handle_update_request(request, token_obj, submission, token):
 
 
 
-# def update_response_value(response, field, field_value, errors):
-#     """
-#     Update the response value with proper validation
-#     """
-#     if field.field_type == 'number':
-#         if field_value not in [None, '']:
-#             try:
-#                 response.value_number = float(field_value)
-#             except (ValueError, TypeError):
-#                 errors.append(f"Field '{field.label}' must be a valid number")
-#         else:
-#             response.value_number = None
-    
-#     elif field.field_type == 'date':
-#         if field_value not in [None, '']:
-#             response.value_date = field_value
-#         else:
-#             response.value_date = None
-    
-#     elif field.field_type == 'checkbox':
-#         if field_value not in [None, '']:
-#             # Convert string to boolean
-#             if isinstance(field_value, str):
-#                 field_value = field_value.lower() in ['true', '1', 'yes', 'on']
-#             response.value_boolean = bool(field_value)
-#         else:
-#             response.value_boolean = False
-    
-#     elif field.field_type == 'alphanumeric':
-#         response.value_alphanumeric = field_value
-    
-#     elif field.field_type == 'image':
-#         # For image fields, we expect a file path or URL in this context
-#         # For actual file uploads, you'd need a different approach
-#         response.value_text = field_value
-    
-#     else:  # text, dropdown, and others
-#         response.value_text = field_value 28/12/2025
 
 
 
@@ -3318,34 +1892,7 @@ def update_response_value(response, field, field_value, file_value, errors):
 
 
 
-# def update_response_value(response, field, field_value, file_value, errors):
 
-#     if field.field_type == 'number':
-#         try:
-#             response.value_number = float(field_value) if field_value else None
-#         except ValueError:
-#             errors.append(f"Field '{field.label}' must be a valid number")
-
-#     elif field.field_type == 'date':
-#         response.value_date = field_value or None
-
-#     elif field.field_type == 'checkbox':
-#         if isinstance(field_value, str):
-#             field_value = field_value.lower() in ['true', '1', 'yes', 'on']
-#         response.value_boolean = bool(field_value)
-
-#     elif field.field_type == 'alphanumeric':
-#         response.value_alphanumeric = field_value
-
-#     elif field.field_type == 'image':
-#         if file_value:
-#             # delete old image
-#             if response.value_image:
-#                 response.value_image.delete(save=False)
-#             response.value_image = file_value
-
-#     else:
-#         response.value_text = field_value
 
 
 
@@ -3987,27 +2534,6 @@ class statusArchitecture(viewsets.ModelViewSet):
         stats['new_entries'] = self._get_new_entries_count()
         
         return Response(stats)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -4708,3 +3234,139 @@ class useridprofile(generics.RetrieveAPIView):
                 "code": "invalid_id",
                 "message": f"'{user_id}' is not a valid user ID"
             })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Add this to your views.py - Optimized Landing Page View with Caching
+
+# from django.utils.decorators import method_decorator
+# from django.views.decorators.cache import cache_page
+# from django.views.decorators.vary import vary_on_headers
+# from django.core.cache import cache
+# from rest_framework.views import APIView
+# from rest_framework.response import Response
+# from rest_framework.permissions import AllowAny
+# from rest_framework import status
+# import logging
+# from django.db.models import Prefetch
+
+# logger = logging.getLogger(__name__)
+
+# class OptimizedLandingPageView(APIView):
+#     """
+#     Optimized landing page endpoint that returns all data in one call
+#     Cached for 5 minutes to reduce database queries
+#     """
+#     permission_classes = [AllowAny]
+    
+#     @method_decorator(cache_page(60 * 5))  # Cache for 5 minutes
+#     @method_decorator(vary_on_headers())
+#     def get(self, request):
+#         try:
+#             # Use select_related and prefetch_related for optimization
+#             from .models import Statistic, PortfolioItem, Service, Testimonial, Client, Slide1, Slide2
+#             from .serializers import (
+#                 StatisticSerializer, PortfolioItemSerializer,
+#                 ServiceSerializer, TestimonialSerializer, ClientSerializer,
+#                 Slide1DetailSerializer, Slide2DetailSerializer
+#             )
+            
+#             # Fetch all data in optimized queries
+#             statistics = Statistic.objects.all().only('id', 'number', 'label')
+#             portfolio = PortfolioItem.objects.all().order_by('-id').only('id', 'category', 'title', 'client', 'year', 'image')
+#             services = Service.objects.all().only('id', 'icon', 'title', 'description')
+#             testimonials = Testimonial.objects.all().order_by('-id').only('id', 'text', 'author', 'position', 'avatar')
+#             clients = Client.objects.all().order_by('name').only('id', 'name')
+            
+#             # Get first slide records (assuming you want the most recent or specific ones)
+#             slide1 = Slide1.objects.first()
+#             slide2 = Slide2.objects.first()
+            
+#             # Prepare response data
+#             data = {
+#                 'statistics': StatisticSerializer(statistics, many=True).data,
+#                 'portfolio': PortfolioItemSerializer(portfolio, many=True).data,
+#                 'services': ServiceSerializer(services, many=True).data,
+#                 'testimonials': TestimonialSerializer(testimonials, many=True).data,
+#                 'clients': ClientSerializer(clients, many=True).data,
+#                 'slides': {
+#                     'slide1': Slide1DetailSerializer(slide1).data if slide1 else None,
+#                     'slide2': Slide2DetailSerializer(slide2).data if slide2 else None,
+#                 }
+#             }
+            
+#             # Add cache headers
+#             response = Response(data, status=status.HTTP_200_OK)
+#             response['Cache-Control'] = 'public, max-age=300'
+#             return response
+            
+#         except Exception as e:
+#             logger.error(f"Error in landing page view: {str(e)}", exc_info=True)
+#             return Response(
+#                 {'error': 'Failed to load landing page data'},
+#                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+#             )
+
+
+# # Add cache invalidation mixin for admin actions
+# class CacheInvalidationMixin:
+#     """
+#     Mixin to invalidate cache when data changes
+#     """
+#     def perform_update(self, serializer):
+#         super().perform_update(serializer)
+#         cache.delete_pattern('*api/landing-page*')
+#         cache.delete_pattern('*views.decorators.cache*')
+    
+#     def perform_destroy(self, instance):
+#         super().perform_destroy(instance)
+#         cache.delete_pattern('*api/landing-page*')
+#         cache.delete_pattern('*views.decorators.cache*')
+    
+#     def perform_create(self, serializer):
+#         super().perform_create(serializer)
+#         cache.delete_pattern('*api/landing-page*')
+#         cache.delete_pattern('*views.decorators.cache*')
+
+
+# # Update your existing ViewSets to use the mixin
+# class OptimizedStatisticViewSet(CacheInvalidationMixin, viewsets.ModelViewSet):
+#     queryset = Statistic.objects.all()
+#     serializer_class = StatisticSerializer
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
+#     @method_decorator(cache_page(60 * 15))
+#     def list(self, request, *args, **kwargs):
+#         return super().list(request, *args, **kwargs)
+
+
+# class OptimizedPortfolioItemViewSet(CacheInvalidationMixin, viewsets.ModelViewSet):
+#     queryset = PortfolioItem.objects.all().order_by('-id')
+#     serializer_class = PortfolioItemSerializer
+#     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    
+#     @method_decorator(cache_page(60 * 15))
+#     def list(self, request, *args, **kwargs):
+#         return super().list(request, *args, **kwargs)
+    
+#     @action(detail=False, methods=['get'])
+#     @method_decorator(cache_page(60 * 15))
+#     def by_category(self, request):
+#         category = request.query_params.get('category')
+#         if category:
+#             items = PortfolioItem.objects.filter(category=category)
+#             serializer = self.get_serializer(items, many=True)
+#             return Response(serializer.data)
+#         return Response([])

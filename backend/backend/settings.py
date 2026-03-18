@@ -91,9 +91,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'db3',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',
+        'USER': 'djangoreactapp',
+        'PASSWORD': 'Jadhav#2542',
+        'HOST': 'django-react-app.c9oocw46y17l.eu-north-1.rds.amazonaws.com',
         'PORT': '3306',
     }
 }

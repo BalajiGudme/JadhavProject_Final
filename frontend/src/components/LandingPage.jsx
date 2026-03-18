@@ -979,7 +979,32 @@ const DesktopMonitorSlideshow = () => {
   </div>
 )}
       {/* Main Desktop Frame */}
-<div ref={frameRef} className="relative w-full max-w-6xl mx-auto" style={{ aspectRatio: "1200 / 528" }} > <div ref={scaleRef} className="absolute top-0 left-0 origin-top-left" style={{ width: "1200px", height: "528px" }} > <img src={slide4Image} alt="Desktop Frame" className="absolute top-0 left-0 w-full h-full object-cover object-center" />
+{/* <div ref={frameRef} className="relative w-full max-w-6xl mx-auto" 
+style={{ aspectRatio: "1200 / 528" }} > 
+<div ref={scaleRef} 
+className="absolute top-0 left-0 origin-top-left" 
+style={{ width: "1200px", height: "528px" }} > 
+
+  <img src={slide4Image} alt="Desktop Frame" 
+  className="absolute top-0 left-0 w-full h-full object-cover object-center" /> */}
+   <div
+        ref={frameRef}
+        className="relative w-full"
+        style={{
+          aspectRatio: "1200 / 528",
+          maxHeight: "100vh"
+        }}
+      >
+        <div
+          ref={scaleRef}
+          className="absolute top-0 left-0 origin-top-left"
+          style={{ width: "1200px", height: "528px" }}
+        >
+          <img
+            src={slide4Image}
+            alt="Desktop Frame"
+            className="w-full h-full object-cover"
+          />
 
           {/* Monitor Screen - Clickable for Edit */}
           <div

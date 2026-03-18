@@ -125,6 +125,9 @@ path('auth/register/init/', RegistrationInitView.as_view(), name='register-init'
  path('user-profile/<int:user_id>/', useridprofile.as_view(), name='user-profile-by-id'),
 
 
+path('architectures/batch-responses/', 
+         views.BatchArchitectureResponsesView.as_view(), 
+         name='batch-architecture-responses'),
 
 # path('landing-page/', OptimizedLandingPageView.as_view(), name='landing-page'),
 ]

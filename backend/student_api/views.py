@@ -3370,3 +3370,215 @@ class useridprofile(generics.RetrieveAPIView):
 #             serializer = self.get_serializer(items, many=True)
 #             return Response(serializer.data)
 #         return Response([])
+
+
+
+
+
+
+# views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Prefetch
+import time
+from collections import defaultdict
+
+class BatchArchitectureResponsesView(APIView):
+    """
+    Accept multiple architecture IDs and return all responses in one go
+    POST /api/architectures/batch-responses/
+    {
+        "architecture_ids": [1, 2, 3, 4, 5, ...]
+    }
+    """
+    authentication_classes = [JWTAuthentication, SessionAuthentication, TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        start_time = time.time()
+        
+        # Get architecture IDs from request
+        architecture_ids = request.data.get('architecture_ids', [])
+        
+        if not architecture_ids:
+            return Response(
+                {"error": "No architecture IDs provided"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Limit number of IDs to prevent abuse
+        if len(architecture_ids) > 500:
+            return Response(
+                {"error": "Too many architecture IDs. Maximum is 500."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        user = request.user
+        
+        # Filter architectures based on user permissions
+        if user.is_staff or user.is_superuser:
+            # Admin can access any architecture
+            architectures = Architecture.objects.filter(id__in=architecture_ids)
+        else:
+            # Regular users can only access their own architectures
+            architectures = Architecture.objects.filter(
+                id__in=architecture_ids,
+                created_by=user
+            )
+        
+        # Get all valid architecture IDs that user has access to
+        valid_arch_ids = list(architectures.values_list('id', flat=True))
+        
+        if not valid_arch_ids:
+            return Response(
+                {"error": "No accessible architectures found with the provided IDs"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Prefetch all related data in optimized way
+        # Get all tokens for these architectures
+        tokens = FormToken.objects.filter(
+            architecture_id__in=valid_arch_ids
+        ).select_related('form')
+        
+        # Get all form fields for all forms
+        form_ids = tokens.values_list('form_id', flat=True).distinct()
+        form_fields = FormField.objects.filter(
+            form_id__in=form_ids,
+            is_active=True
+        ).order_by('order').only(
+            'id', 'label', 'field_type', 'order', 'is_required', 'form_id'
+        )
+        
+        # Group fields by form_id for easy lookup
+        fields_by_form = defaultdict(list)
+        for field in form_fields:
+            fields_by_form[field.form_id].append(field)
+        
+        # Get all submissions for these tokens
+        submissions = FormSubmission.objects.filter(
+            token__in=tokens
+        ).select_related('token').order_by('id')
+        
+        # Get all responses for these submissions
+        if user.is_staff or user.is_superuser:
+            responses = FieldResponse.objects.filter(
+                submission__in=submissions
+            ).select_related(
+                'field', 'submission', 'submission__token'
+            )
+        else:
+            # Extra filter for non-admin users (though already filtered by architecture)
+            responses = FieldResponse.objects.filter(
+                submission__in=submissions,
+                submission__token__architecture__created_by=user
+            ).select_related(
+                'field', 'submission', 'submission__token'
+            )
+        
+        # Organize data for quick access
+        # Structure: responses_by_arch[arch_id][submission_id][field_id] = response
+        responses_by_arch = defaultdict(lambda: defaultdict(dict))
+        for response in responses:
+            arch_id = response.submission.token.architecture_id
+            submission_id = response.submission_id
+            responses_by_arch[arch_id][submission_id][response.field_id] = response
+        
+        # Group submissions by architecture
+        submissions_by_arch = defaultdict(list)
+        for submission in submissions:
+            arch_id = submission.token.architecture_id
+            submissions_by_arch[arch_id].append(submission)
+        
+        # Group tokens by architecture
+        tokens_by_arch = defaultdict(list)
+        for token in tokens:
+            tokens_by_arch[token.architecture_id].append(token)
+        
+        # Build response for each architecture
+        result = []
+        serializer_context = {'request': request}
+        
+        for arch in architectures:
+            arch_id = arch.id
+            arch_tokens = tokens_by_arch.get(arch_id, [])
+            arch_submissions = submissions_by_arch.get(arch_id, [])
+            
+            # Get fields for this architecture's forms
+            arch_form_ids = set(t.form_id for t in arch_tokens)
+            arch_fields = []
+            for form_id in arch_form_ids:
+                arch_fields.extend(fields_by_form.get(form_id, []))
+            
+            # Prepare responses data for this architecture
+            arch_responses_data = []
+            
+            for submission in arch_submissions:
+                submission_responses = responses_by_arch[arch_id].get(submission.id, {})
+                
+                for field in arch_fields:
+                    response = submission_responses.get(field.id)
+                    
+                    if response:
+                        # Serialize existing response
+                        try:
+                            serializer = ArchitectureFieldResponseSerializer(
+                                response, 
+                                context=serializer_context
+                            )
+                            arch_responses_data.append(serializer.data)
+                        except Exception as e:
+                            # Handle serialization error
+                            arch_responses_data.append({
+                                'id': response.id,
+                                'submission_id': submission.id,
+                                'architecture_id': arch_id,
+                                'architecture_name': str(arch),
+                                'token': submission.token.token if submission.token else None,
+                                'field': field.id,
+                                'field_label': field.label,
+                                'field_type': field.field_type,
+                                'field_order': field.order,
+                                'field_required': field.is_required,
+                                'value': f"Error: {str(e)}",
+                                'created_at': response.created_at.isoformat() if response.created_at else None
+                            })
+                    else:
+                        # No response for this field
+                        arch_responses_data.append({
+                            'id': None,
+                            'submission_id': submission.id,
+                            'architecture_id': arch_id,
+                            'architecture_name': str(arch),
+                            'token': submission.token.token if submission.token else None,
+                            'field': field.id,
+                            'field_label': field.label,
+                            'field_type': field.field_type,
+                            'field_order': field.order,
+                            'field_required': field.is_required,
+                            'value': None,
+                            'created_at': None
+                        })
+            
+            # Build architecture response
+            arch_response = {
+                'architecture_id': arch_id,
+                'architecture_name': str(arch),
+                'token_count': len(arch_tokens),
+                'submission_count': len(arch_submissions),
+                'tokens': [t.token for t in arch_tokens],
+                'submission_ids': [s.id for s in arch_submissions],
+                'responses': arch_responses_data
+            }
+            
+            result.append(arch_response)
+        
+        execution_time = time.time() - start_time
+        
+        return Response({
+            'execution_time': f"{execution_time:.2f}s",
+            'architectures_processed': len(architectures),
+            'total_architectures_requested': len(architecture_ids),
+            'architectures': result
+        })

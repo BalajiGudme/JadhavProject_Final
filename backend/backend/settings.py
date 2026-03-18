@@ -26,14 +26,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-a=e(!2nqx3_co&hk@olmhb$dbr2#e6tfk1wpcygks6v_tvhqqw'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+#DEBUG = True
+DEBUG = False
+
+
+
+
 # DEBUG = False
-
-ALLOWED_HOSTS = []
-
-
-# DEBUG = False
-# ALLOWED_HOSTS = ["your-ec2-ip", "your-domain"]
+ALLOWED_HOSTS = ["16.171.143.183"]
 
 
 # Application definition
@@ -129,7 +129,7 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-CORS_ALLOW_ALL_ORIGINS = True
+#CORS_ALLOW_ALL_ORIGINS = True
 
 AUTH_USER_MODEL = 'student_api.CustomUser'
 
